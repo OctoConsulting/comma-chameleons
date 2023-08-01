@@ -5,3 +5,4 @@ langchain
 chromadb
 accelerate
 xformers
+gradio
