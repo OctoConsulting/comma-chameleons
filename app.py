@@ -1,8 +1,84 @@
 import gradio as gr
 
+from langchain import HuggingFacePipeline
+from langchain.prompts import PromptTemplate
+from langchain.prompts.pipeline import PipelinePromptTemplate
+from langchain.chains import LLMChain, SequentialChain
+from langchain.memory import ConversationBufferMemory
+from langchain.utilities import WikipediaAPIWrapper
+from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+import transformers
+import torch
+import random
+import time
 
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
+
+#####Return LangChain Promt to bot for testing UI#####
+def __return_promt():
+    example = """Did you enjoy Leadership Awareness with Dr. Renee Carr? Join Renee as she leads you through a 3-week Leadership Competency cohort focused on Level 1 (Self). This will be the last offering for Level 1 (Self) in 2023.
+
+    Register now!
+
+    Course and schedule information listed below.
+
+    About the Leadership Competency Pillar
+    The Leadership Competency Pillar Levels 1-3 are designed to equip agile leaders with advanced, practice-oriented skills for effectively leading teams in a Volatile, Uncertain, Complex, and Ambiguous (VUCA) world. Start with the Level 1 (Self) cohort to discover your personal alignment toward leadership. Upon completion of Level 1 (Self), you can immediately advance into Level 2 (Teams) this summer and Level 3 (Organizations) this fall. For each level, you’ll need 8 total hours across three weeks and earn 8 CLPs.
+
+    Summer 2023
+    July 11th — July 25th (Level 1 Self) *Last chance to take Level 1 (Self) in 2023!
+    Tuesday, July 11th, 11:00 AM — 2:00 PM ET
+    Tuesday, July 18th, 11:00 AM — 2:00 PM ET
+    Tuesday, July 25th, 11:00 AM — 1:00 PM ET
+
+    Register now!
+
+    Interested in developing a foundational skill set in another learning track? View course and schedule information on Confluence.
+
+    We hope you will join us,
+    Workforce Resilience team
+
+    Provide feedback on your learner experience by reaching out to Workforce Resilience at workforceresilience@cms.hhs.gov. Join us on Slack at #workforce_resilience_public.
+    """
+
+    full_template = """{introduction}
+
+    {example}
+
+    {start}"""
+    full_prompt = PromptTemplate.from_template(full_template)
+
+    introduction_template = """You create marketing copies for an internal
+    IT workforce reliance program for a healthcare insurance organization. """
+    introduction_prompt = PromptTemplate.from_template(introduction_template)
+
+    example_template = """Here's some examples of how you write:
+
+    {example_c} """
+    example_prompt = PromptTemplate.from_template(example_template)
+
+    start_template = """
+
+    Input: {input}
+    Output:"""
+    start_prompt = PromptTemplate.from_template(start_template)
+
+    input_prompts = [
+        ("introduction", introduction_prompt),
+        ("example", example_prompt),
+        ("start", start_prompt)
+    ]
+    pipeline_prompt = PipelinePromptTemplate(final_prompt=full_prompt, pipeline_prompts=input_prompts)
+
+    #pipeline_prompt.input_variables
+
+    return pipeline_prompt.format(
+        example_c = example,
+        input="Progam Management Jan 18"
+    )
+
+
 
 
 ################### langchain example method FROM THE GRADIO DOCS #######################
@@ -58,8 +134,11 @@ import gradio as gr
 
 
 ######################## Gradio ui ##############################
-def get_model_reply():
-    print("hello")
+def get_model_reply(message, chat_history):
+    bot_message = random.choice(["How are you?", "I love you", "I'm very hungry"])
+    chat_history.append((message, bot_message))
+    time.sleep(1)
+    return "", chat_history
 
 # def load_chain():
 #     """Logic for loading the chain you want to use should go here."""
@@ -69,7 +148,9 @@ def get_model_reply():
 
 chain = "load_chain"
 
-block = gr.Blocks(css=".gradio-container {background-color: white;}")
+#block = gr.Blocks(css=".gradio-container {background-color: white;}")
+#using gradio default scheme for now
+block = gr.Blocks(css=".gradio-container}")
 
 with block:
     with gr.Row():
@@ -112,8 +193,9 @@ with block:
     state = gr.State()
     agent_state = gr.State()
 
-    submit.click(get_model_reply, inputs=[message], outputs=[chatbot])
-    message.submit(get_model_reply, inputs=[message], outputs=[chatbot]) #, [txt, state], [chatbot, state]
+
+    submit.click(get_model_reply, inputs=[message, chatbot], outputs=[message, chatbot])
+    message.submit(get_model_reply, inputs=[message, chatbot], outputs=[message, chatbot]) #, [txt, state], [chatbot, state]
     # btn.upload(get_model_reply, [btn, file_output], file_output)
 
 block.launch(debug=True)
