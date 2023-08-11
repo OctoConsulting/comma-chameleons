@@ -69,7 +69,7 @@ def get_model_reply():
 
 chain = "load_chain"
 
-block = gr.Blocks(css=".gradio-container {background-color: white;}")
+block = gr.Blocks(css=".gradio-container {background-color: #d3d3d3; }")
 
 with block:
     with gr.Row():
