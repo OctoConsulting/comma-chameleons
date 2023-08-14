@@ -1,3 +1,5 @@
 /env
 /workspace
 .DS_Store
+key*
+/__pycache__

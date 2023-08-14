@@ -7,3 +7,7 @@ accelerate
 xformers
 gradio
 ipykernel
+ipwidgets
+openai
+tiktoken
+beautifulsoup4
