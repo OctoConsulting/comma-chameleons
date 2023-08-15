@@ -11,4 +11,7 @@
     python -m venv env\
     source env/bin/activate (macOs and Linux)\
     pip install -r requirements.txt\
-    streamlit run hello_world.py
+    add your OPEN_API_KEY to updateme.key.ini and save as key.ini
+
+4. To run in debug mode    
+    gradio app.py

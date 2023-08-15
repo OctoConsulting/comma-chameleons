@@ -16,9 +16,17 @@ import time
 import os
 from typing import Optional, Tuple
 from threading import Lock
+import configparser
 
+def get_secrets(cfg_file='key.ini'):
+    config=configparser.ConfigParser()
+    config.read(os.path.join(os.path.dirname(__file__),cfg_file))
+    try:
+        return config['OPENAI_API_KEY']['key']
+    except:
+        raise SystemExit("could not find key")
 
-os.environ["OPENAI_API_KEY"] = ""  # Replace with your key
+os.environ["OPENAI_API_KEY"] = get_secrets()  # Replace with your key
 
 
 # https://www.gradio.app/demos
