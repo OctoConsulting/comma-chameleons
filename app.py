@@ -209,18 +209,17 @@ def load_chain():
 
 ######################## Gradio ui ##############################
 ################## basic custom css how to #########################
-# css = """
-# #warning {background-color: #FFCCCB} 
-# .feedback textarea {font-size: 24px !important}
-# """
-
+css = """
+#warning {background-color: #FFCCCB} 
+.feedback textarea {font-size: 24px !important}
+#chat-prompt {box-shadow: 3px 3px red}
+"""
+# css examples
 # with gr.Blocks(css=css) as demo:
 #     box1 = gr.Textbox(value="Good Job", elem_classes="feedback")
 #     box2 = gr.Textbox(value="Failure", elem_id="warning", elem_classes="feedback")
 
-#block = gr.Blocks(css=".gradio-container {background-color: white;}")
-#using gradio default scheme for now
-block = gr.Blocks(css=".gradio-container}")
+block = gr.Blocks(css=css)
 
 with block:
 
@@ -239,13 +238,14 @@ with block:
     with gr.Row():
         gr.Markdown("<h3><center>LangChain Demo</center></h3>")
 
-    chatbot = gr.Chatbot()
+    chatbot = gr.Chatbot(height=620)
 
     with gr.Row():
         message = gr.Textbox(
             label="What's your question?",
             placeholder="What's the answer to life, the universe, and everything?",
-            lines=1,
+            lines=3,
+            elem_id="chat-prompt"
         ).style(container=False)
 
         with gr.Column(scale=0.15, min_width=0):  
