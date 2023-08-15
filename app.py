@@ -212,7 +212,7 @@ def load_chain():
 css = """
 #warning {background-color: #FFCCCB} 
 .feedback textarea {font-size: 24px !important}
-#chat-prompt {box-shadow: 3px 3px red}
+#chat-prompt {box-shadow: 3px 3px red, -1em 0 .4em olive;}
 """
 # css examples
 # with gr.Blocks(css=css) as demo:
