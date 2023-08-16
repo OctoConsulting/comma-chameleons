@@ -207,7 +207,7 @@ def load_chain():
 
 
 #Old AutoBot
-#def get_model_reply(message, chat_history):
+# def get_model_reply(message, chat_history):
 #    bot_message = random.choice(["How are you?", "I love you", "I'm very hungry"])
 #    chat_history.append((message, bot_message))
 #    time.sleep(1)
@@ -221,6 +221,9 @@ css = """
 #warning {background-color: #FFCCCB} 
 .feedback textarea {font-size: 24px !important}
 #chat-prompt {box-shadow: 3px 3px red, -1em 0 .4em olive;}
+#chat-prompt-row {position: absolute; top: 305px;}
+#header-subtext {display: flex;}
+#upload-btn {width: max-content; font-size: 14px; border: none; background: none; box-shadow: none; z-index: 2;}
 """
 # css examples
 # with gr.Blocks(css=css) as demo:
@@ -235,57 +238,57 @@ with block:
     #init chain 
     chain = load_chain()
 
-    ################# BOT #######################
-
+    ################## BOT #######################
     def predict(inp, history):
         #output = chain.run({'example_c':example,'input':inp})
         output = chain.run({'input':inp})
         history.append((inp, output))
         return "", history
 
-    with gr.Row():
-        gr.Markdown("<h3><center>LangChain Demo</center></h3>")
-
-    chatbot = gr.Chatbot(height=620)
+    gr.Markdown("<h3><center>LangChain Demo</center></h3>", elem_id="header-subtext")
 
     with gr.Row():
-        message = gr.Textbox(
-            label="What's your question?",
-            placeholder="What's the answer to life, the universe, and everything?",
-            lines=3,
-            elem_id="chat-prompt"
-        ).style(container=False)
 
-        with gr.Column(scale=0.15, min_width=0):  
-            submit = gr.Button(value="Send", variant="secondary").style(full_width=False)
+        with gr.Column():
 
-        with gr.Column(scale=0.15, min_width=0):
-            btn = gr.UploadButton("📁Upload", file_types=["image", "audio"],  file_count="single")
+            with gr.Row():
+                message = gr.Textbox(
+                    label="Input",
+                    placeholder="What's the answer to life, the universe, and everything?",
+                    lines=15,
+                    elem_id="chat-prompt"
+                ).style(container=False)
+                
+                with gr.Row(elem_id="chat-prompt-row"):
+                    with gr.Column(scale=0.09, min_width=0):
+                        btn = gr.UploadButton("📁 File", file_types=["image", "audio"],  file_count="single", elem_id="upload-btn")
 
-    with gr.Row():
-        with gr.Accordion("Available Files", open=False):
-            file_output = gr.File(file_count="multiple", file_types=["image", "audio"], label="Files Available")
+            with gr.Column(scale=0.09, min_width=0):  
+                        submit = gr.Button(value="Send", variant="secondary").style(full_width=False)
 
-    gr.Examples(
-        examples=[
-            "Hi! How's it going?",
-            "What should I do tonight?",
-            "Whats 2 + 2?",
-        ],
-        inputs=message,
-    )
+            with gr.Row():
+                with gr.Accordion("Available Files", open=False):
+                    file_output = gr.File(file_count="multiple", file_types=["image", "audio"], label="Files Available")
 
-    gr.HTML("Demo application of a LangChain chain.")
+            gr.Examples(
+                examples=[
+                    "Hi! How's it going?",
+                    "What should I do tonight?",
+                    "Whats 2 + 2?",
+                ],
+                inputs=message,
+            )
 
-    gr.HTML(
-        "<center>Powered by <a href='https://github.com/hwchase17/langchain'>LangChain 🦜️🔗</a></center>"
-    )
-    
+            # gr.HTML("Demo application of a LangChain chain.")
+        
+        chatbot = gr.Chatbot(height=700, label="Output")
 
 
     submit.click(predict, inputs=[message, chatbot], outputs=[message, chatbot])
     message.submit(predict, inputs=[message, chatbot], outputs=[message, chatbot]) #, [txt, state], [chatbot, state]
     # btn.upload(get_model_reply, [btn, file_output], file_output)
 
-
+    # gr.HTML(
+    #     "<center>Powered by <a href='https://github.com/hwchase17/langchain'>LangChain 🦜️🔗</a></center>"
+    # )
 block.launch()#debug=True)
