@@ -245,6 +245,11 @@ with block:
         history.append((inp, output))
         return "", history
 
+    # extract the file name from the uploaded file
+    def file_name_reader(file):
+        file_name = file.name  
+        return file_name
+
     gr.Markdown("<h3><center>LangChain Demo</center></h3>", elem_id="header-subtext")
 
     with gr.Row():
@@ -261,14 +266,16 @@ with block:
                 
                 with gr.Row(elem_id="chat-prompt-row"):
                     with gr.Column(scale=0.09, min_width=0):
-                        btn = gr.UploadButton("📁 File", file_types=["image", "audio"],  file_count="single", elem_id="upload-btn")
+                        upload_btn = gr.UploadButton("📁 File", file_types=["", ".", ".csv",".xls",".xlsx", "text"],  file_count="single", elem_id="upload-btn")
 
             with gr.Column(scale=0.09, min_width=0):  
                         submit = gr.Button(value="Send", variant="secondary").style(full_width=False)
 
             with gr.Row():
+                # file_output = gr.File()
+
                 with gr.Accordion("Available Files", open=False):
-                    file_output = gr.File(file_count="multiple", file_types=["image", "audio"], label="Files Available")
+                    file_output = gr.File(file_count="multiple", file_types=["", ".", ".csv",".xls",".xlsx", "text"], label="Files Available")
 
             gr.Examples(
                 examples=[
@@ -283,10 +290,11 @@ with block:
         
         chatbot = gr.Chatbot(height=700, label="Output")
 
-
     submit.click(predict, inputs=[message, chatbot], outputs=[message, chatbot])
     message.submit(predict, inputs=[message, chatbot], outputs=[message, chatbot]) #, [txt, state], [chatbot, state]
-    # btn.upload(get_model_reply, [btn, file_output], file_output)
+
+    # .upload is an abstraction of an event listener when the user clicks the upload_btn
+    upload_btn.upload(file_name_reader, upload_btn, file_output, show_progress=True)
 
     # gr.HTML(
     #     "<center>Powered by <a href='https://github.com/hwchase17/langchain'>LangChain 🦜️🔗</a></center>"
