@@ -245,10 +245,15 @@ with block:
         history.append((inp, output))
         return "", history
 
-    # extract the file name from the uploaded file
-    def file_name_reader(file):
-        file_name = file.name  
-        return file_name
+    def read_file_from_path(file_path):
+        with open(file_path, 'r') as f:
+            content = f.read()
+        return content
+
+    def process_uploaded_file(file):
+        file_path = file.name        
+        content = read_file_from_path(file_path)
+        return content
 
     gr.Markdown("<h3><center>LangChain Demo</center></h3>", elem_id="header-subtext")
 
@@ -275,7 +280,7 @@ with block:
                 # file_output = gr.File()
 
                 with gr.Accordion("Available Files", open=False):
-                    file_output = gr.File(file_count="multiple", file_types=["", ".", ".csv",".xls",".xlsx", "text"], label="Files Available")
+                    file_display = gr.Textbox(label="File Contents", lines=10, readonly=True) 
 
             gr.Examples(
                 examples=[
@@ -294,7 +299,7 @@ with block:
     message.submit(predict, inputs=[message, chatbot], outputs=[message, chatbot]) #, [txt, state], [chatbot, state]
 
     # .upload is an abstraction of an event listener when the user clicks the upload_btn
-    upload_btn.upload(file_name_reader, upload_btn, file_output, show_progress=True)
+    upload_btn.upload(process_uploaded_file, inputs=upload_btn, outputs=message)
 
     # gr.HTML(
     #     "<center>Powered by <a href='https://github.com/hwchase17/langchain'>LangChain 🦜️🔗</a></center>"
