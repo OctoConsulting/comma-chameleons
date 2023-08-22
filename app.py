@@ -130,11 +130,11 @@ with block:
             with gr.Column(scale=0.09, min_width=0):  
                         submit = gr.Button(value="Send", variant="secondary").style(full_width=False)
 
-            with gr.Row():
-                # file_output = gr.File()
+            # with gr.Row():
+            #     # file_output = gr.File()
 
-                with gr.Accordion("Available Files", open=False):
-                    file_display = gr.Textbox(label="File Contents", lines=10, readonly=True) 
+            #     with gr.Accordion("Available Files", open=False):
+            #         file_display = gr.Textbox(label="File Contents", lines=10, readonly=True) 
 
             gr.Examples(
                 examples=[
