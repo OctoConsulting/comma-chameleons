@@ -18,17 +18,30 @@ from typing import Optional, Tuple
 from threading import Lock
 import configparser
 import pdb
+from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
+from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes, DecodingMethods
+from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
+from ibm_watson_machine_learning.foundation_models import Model
 
-def get_secrets(cfg_file='key.ini'):
+def get_secrets(cfg_file='key.ini',llm=None,project_id=False):
     config=configparser.ConfigParser()
     config.read(os.path.join(os.path.dirname(__file__),cfg_file))
-    try:
-        return config['OPENAI_API_KEY']['key']
-    except:
-        raise SystemExit("could not find key")
+    
+    if project_id == True:
+        try:
+            return config['WATSONX_KEY']['project_id']
+        except:
+            raise SystemExit("could not find watsonx project id")
+    if project_id == False:
+        try:
+            if llm == 'OPENAI':
+                return config['OPENAI_API_KEY']['key']
+            elif llm == 'WATSONX':
+                return config['WATSONX_KEY']['key']
+        except:
+            raise SystemExit("could not find key")
 
-os.environ["OPENAI_API_KEY"] = get_secrets()  # Replace with your key
-
+#os.environ["OPENAI_API_KEY"] = get_secrets(llm='OPENAI')  # Replace with your key
 
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
@@ -53,7 +66,30 @@ prompt = PromptTemplate(
 
 def load_chain():
     """Logic for loading the chain you want to use should go here."""
-    llm = ChatOpenAI(temperature=.7, model='gpt-3.5-turbo-16k')
+    #OPENAI
+    #llm = ChatOpenAI(temperature=.7, model='gpt-3.5-turbo-16k')
+    #WATSONX
+    params = {
+        GenParams.MAX_NEW_TOKENS: 100,
+        GenParams.MIN_NEW_TOKENS: 1,
+        GenParams.DECODING_METHOD: DecodingMethods.SAMPLE,
+        GenParams.TEMPERATURE: 0.5,
+        GenParams.TOP_K: 50,
+        GenParams.TOP_P: 1
+    }
+    credentials = {
+        'url': "https://us-south.ml.cloud.ibm.com",
+        'apikey' : get_secrets(llm='WATSONX')
+    }
+
+    project_id = get_secrets(project_id=True)
+   
+    flan_t5_model = Model(
+    model_id="google/flan-t5-xxl",
+    credentials=credentials,
+    project_id=project_id)
+    llm = WatsonxLLM(model=flan_t5_model)
+    
     memory = ConversationBufferMemory(memory_key='chat_history')
     chain = LLMChain(llm=llm, prompt=prompt, verbose=True, output_key='output', memory=memory)
     return chain
