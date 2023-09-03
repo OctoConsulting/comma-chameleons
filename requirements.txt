@@ -12,3 +12,4 @@ openai
 tiktoken
 beautifulsoup4
 ibm-watson-machine-learning==1.0.320 
+sentence_transformers
