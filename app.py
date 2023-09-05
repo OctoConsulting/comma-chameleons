@@ -1,23 +1,22 @@
 import gradio as gr
-
-from langchain import HuggingFacePipeline
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import AIMessage, HumanMessage
+#from langchain import HuggingFacePipeline
+#from langchain.chat_models import ChatOpenAI
+#from langchain.schema import AIMessage, HumanMessage
 from langchain.prompts import PromptTemplate
-from langchain.prompts.pipeline import PipelinePromptTemplate
+#from langchain.prompts.pipeline import PipelinePromptTemplate
 from langchain.chains import LLMChain, ConversationChain
 from langchain.memory import ConversationBufferMemory
-from langchain.utilities import WikipediaAPIWrapper
-from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
-import transformers
-import torch
-import random
-import time
+#from langchain.utilities import WikipediaAPIWrapper
+#from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig
+#import transformers
+#import torch
+#import random
+#import time
 import os
-from typing import Optional, Tuple
-from threading import Lock
+#from typing import Optional, Tuple
+#from threading import Lock
 import configparser
-import pdb
+#import pdb
 from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
 from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes, DecodingMethods
 from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
@@ -41,7 +40,12 @@ def get_secrets(cfg_file='key.ini',llm=None,project_id=False):
         except:
             raise SystemExit("could not find key")
 
-#os.environ["OPENAI_API_KEY"] = get_secrets(llm='OPENAI')  # Replace with your key
+os.environ["OPENAI_API_KEY"] = get_secrets(llm='OPENAI')  # Replace with your key
+
+
+#########Build Vector DB###########
+
+
 
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
