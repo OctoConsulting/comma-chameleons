@@ -96,13 +96,6 @@ def get_secrets(cfg_file='key.ini',llm=None,project_id=False):
         except:
             raise SystemExit("could not find key")
         
-
-def predict(inp, history):
-    #output = chain.run({'example_c':example,'input':inp})
-    output = chain.run({'input':inp})
-    history.append((inp, output))
-    return "", history
-
 #For Testing
 def get_model_reply(message, chat_history):
    bot_message = random.choice(["How are you?", "I love you", "I'm very hungry"])

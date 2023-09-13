@@ -2,7 +2,6 @@
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
 import gradio as gr
-from llm_utils import predict
 
 def read_file_from_path(file_path):
     with open(file_path, 'r') as f:
@@ -33,6 +32,35 @@ def display_message(button_text):
     elif button_text == 'Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis':
         return '**Press send to ask the ai more about this** Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis before you may apply for a Certificate of Label Approval, or COLA. We require formula approval most commonly when a product has added flavoring or coloring materials. New to Formula Approval? A formula is a complete list of the ingredients used to make an alcohol beverage and a step-by-step description of how it\'s made. In some cases, we may also require laboratory analysis of the product. Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis before you may apply for a Certificate of Label Approval, or COLA. We require formula approval most commonly when a product has added flavoring or coloring materials. New to Formula Approval? A formula is a complete list of the ingredients used to make an alcohol beverage and a step-by-step description of how it\'s made. In some cases, we may also require laboratory analysis of the product. Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis before you may apply for a Certificate of Label Approval, or COLA. We require formula approval most commonly when a product has added flavoring or coloring materials. New to Formula Approval? A formula is a complete list of the ingredients used to make an alcohol beverage and a step-by-step description of how it\'s made. In some cases, we may also require laboratory analysis of the product. Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis before you may apply for a Certificate of Label Approval, or COLA. We require formula approval most commonly when a product has added flavoring or coloring materials. New to Formula Approval? A formula is a complete list of the ingredients used to make an alcohol beverage and a step-by-step description of how it\'s made. In some cases, we may also require laboratory analysis of the product.'
 
+# def predict(inp, history):
+#     #output = chain.run({'example_c':example,'input':inp})
+#     output = chain.run({'input':inp})
+#     history.append((inp, output))
+#     return "", history
+
+def predict(inp, history):
+    print("this is the input:" + inp)
+    print(history)
+    import requests
+    API_KEY = '5Oz7Ma1ZCctfI0I9FU1kbZC6YRWm9jRKddtL-8mJYREx'
+    token_response = requests.post('https://iam.cloud.ibm.com/identity/token', data={"apikey": API_KEY, "grant_type": 'urn:ibm:params:oauth:grant-type:apikey'})
+    mltoken = token_response.json()["access_token"]
+
+    header = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + mltoken}
+
+    # payload_scoring = {"input_data": [{"fields": [array_of_input_fields], "values": [array_of_values_to_be_scored, another_array_of_values_to_be_scored]}]}
+    payload_scoring = {"input_data": [{"values": [history + [inp]]}]}
+    response_scoring = requests.post('https://us-south.ml.cloud.ibm.com/ml/v4/deployments/ce451240-81cf-41ac-856d-a00153c75bbd/predictions?version=2021-05-01', 
+                       json=payload_scoring, 
+                       headers={'Authorization': 'Bearer ' + mltoken})
+
+    response_json = response_scoring.json()
+    print(response_json)
+
+    output = response_json.get('predictions', [{}])[0].get('values', [[""]])[0][0]
+
+    history.append((inp, output))
+    return "", history
 
 ################## custom css #########################
 css = """
