@@ -1,15 +1,15 @@
-streamlit
-torch
-transformers
+#streamlit
+#torch
+#transformers
 langchain
 chromadb
 accelerate
-xformers
+#xformers
 gradio
 ipykernel
 ipwidgets
-openai
+#openai
 tiktoken
 beautifulsoup4
-ibm-watson-machine-learning==1.0.320 
+ibm-watson-machine-learning>=1.0.321 #(for langchain and llama2) 
 sentence_transformers

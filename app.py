@@ -1,18 +1,23 @@
 
 # Local Imports
-from llm_utils import *
+from llm_utils import load_data_from_huggingface, create_vector_db, RAGUtils, Credentials
 from app_utils import initialize_ui
 #from settings import css
 #from gradio import *
 
 
 ###### Build Vector DB ########
-#url= "https://js.langchain.com/docs/modules/memory/"
-#docs = web_scrap(url)
-#vector_db = create_vector_db(docs)
+
+docs = load_data_from_huggingface('wikipedia',name="20220301.simple")
+
+db = create_vector_db(docs)
 
 ###### Langchain ########
-#chain = load_chain(vector_db)
+
+creds = Credentials('key.ini')
+rag = RAGUtils(db,creds)
+#local text
+predict = rag()
 
 ###### Assistant Api ########
 

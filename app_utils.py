@@ -3,7 +3,6 @@
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
 import gradio as gr
 
-# Read and return content from a file given its path.
 def read_file_from_path(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
@@ -45,6 +44,8 @@ def display_message(button_text):
 
 # Make a call to LLM API that sends Gradio input and history as payload, update the history accordingly.
 def predict(inp, history):
+    
+
     print("this is the input:" + inp)
     print(history)
     
