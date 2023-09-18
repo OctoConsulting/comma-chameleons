@@ -1,55 +1,33 @@
-from langchain.document_loaders.recursive_url_loader import RecursiveUrlLoader
-from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma 
-
-#from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-#from langchain.prompts.pipeline import PipelinePromptTemplate
-#from langchain.chains import LLMChain
-from langchain.chains import RetrievalQA
-from typing import List
-from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
-from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
-from langchain.agents.agent_toolkits import create_retriever_tool
-from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
-
-from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
-from ibm_watson_machine_learning.foundation_models import Model
-from langchain.memory import ConversationBufferMemory, ConversationSummaryMemory
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers import ContextualCompressionRetriever
-#from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain.retrievers.document_compressors import EmbeddingsFilter
-from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
-from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
-from ibm_watson_machine_learning.foundation_models import Model
 from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes, DecodingMethods
-from langchain.agents.agent_toolkits import create_conversational_retrieval_agent
-from langchain.agents.agent_toolkits import create_retriever_tool
-from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
-from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes, DecodingMethods
-from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
-from ibm_watson_machine_learning.foundation_models import Model
-from langchain.memory import ConversationBufferMemory, ConversationSummaryMemory
 from langchain.chains import (
         StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
     )
-from langchain.prompts import PromptTemplate
 from langchain.memory import ChatMessageHistory
+from langchain.schema import Document
+from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
+from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenParams
+from ibm_watson_machine_learning.foundation_models import Model
+from typing import List, Iterable
+from pydantic import BaseModel, Field
+import json
+import logging
 
+logging.basicConfig()
+logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
+logging.getLogger("langchain.retrievers.document_compressors.embeddings_filter").setLevel(logging.INFO)
 
+#def web_scrap(url):
+#    loader = RecursiveUrlLoader(url=url, extractor=lambda x: Soup(x, "html.parser").text)
+#    docs = loader.load
+#    return docs
 
-
-
- 
-def web_scrap(url):
-    loader = RecursiveUrlLoader(url=url, extractor=lambda x: Soup(x, "html.parser").text)
-    docs = loader.load
-    return docs
-
+#wierd dependecy on dill
 def load_data_from_huggingface(path,name=None,page_content_column='text', max_len=20):
     #LangChain Wrapper does not support splits and assumes text context https://github.com/langchain-ai/langchain/issues/10674
     from langchain.document_loaders import HuggingFaceDatasetLoader
@@ -69,21 +47,26 @@ def create_vector_db(docs):
     from transformers import AutoTokenizer
     
     tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-large-en-v1.5")
-    text_splitter = TokenTextSplitter.from_huggingface_tokenizer(tokenizer,chunk_size=100, chunk_overlap=5)
+    text_splitter = TokenTextSplitter.from_huggingface_tokenizer(tokenizer,chunk_size=200, chunk_overlap=20)
     docs_split = text_splitter.transform_documents(docs)
     
     ###Get Encodder Model
     from langchain.embeddings import HuggingFaceBgeEmbeddings #requires sentence-transformers
-    try:
-        import torch
-        is_cuda_available = torch.cuda.is_available()
-    except ImportError:
-        is_cuda_available = False
-
-    device = 'cuda' if is_cuda_available else 'cpu'
-    normalize_embeddings = is_cuda_available
     
-    model_name = "BAAI/bge-small-en"
+    #This was not working in Wx Notebook
+    #try:
+    #    import torch
+    #    is_cuda_available = torch.cuda.is_available()
+    #except ImportError:
+    #    is_cuda_available = False
+
+    #device = 'cuda' if is_cuda_available else 'cpu'
+    #normalize_embeddings = is_cuda_available
+    device ='cuda'
+    normalize_embeddings = True
+    
+    
+    model_name = "BAAI/bge-large-en-v1.5"
     model_kwargs = {'device': device}
     encode_kwargs = {'normalize_embeddings': normalize_embeddings}
     
@@ -95,15 +78,9 @@ def create_vector_db(docs):
     embedding_function= bge_hf
     
     # embed and load it into Chroma
-    db = Chroma.from_documents(docs_split, embedding_function,persist_directory="./chroma_db_wiki")
+    db = Chroma.from_documents(docs_split, embedding_function)#,persist_directory="./chroma_db_wiki")
     #db.persist()
     return db
-
-
-
-
-
-
 
 # Output parser will split the LLM result into a list of queries
 #Pydantic requires classes
@@ -154,14 +131,14 @@ class RAGUtils:
     
     def __init__(self, db, credentials: Credentials = None):
         self._db = db
-        self._creds = Credentials
+        self._creds = credentials
         self._history = ChatMessageHistory()
         #Load Chain
         try:
             #Low Temp Model Low Output (Faster/Cheaper) Model for RAG 
-            self._llm_llama_temp_0p1 = self._get_llama(temp=0.1,max_new_tokens=1000)
+            self._llm_llama_temp_0p1 = self._get_llama(temp=0.2,max_new_tokens=300)
             #get a mid temp high output model for the QA
-            self._llm_llama_temp_0p5 = self._get_llama(0.5,1000)
+            self._llm_llama_temp_0p5 = self._get_llama(temp=0.5,max_new_tokens=1000)
             #The RAG
             self._chain = self._load_chain()
         except Exception as e:
@@ -169,14 +146,14 @@ class RAGUtils:
 
     def __call__(self,inp, chat_history):
         #Gradio Need to test WxA       
-        for human, ai in history:
+        for human, ai in chat_history:
             self._history.add_user_message(human)
             self._history.add_ai_message(ai)
-        
-        output = self._chain.run({'question':inp, 'chat_history':self._history})
+        print(self._history.messages)
+        output = self._chain.run({'question':inp, 'chat_history':self._history.messages})
         self._history.add_user_message(inp)
         self._history.add_ai_message(output)
-        return "", self._history
+        return "", self._history.messages
 
  
     
@@ -198,8 +175,8 @@ class RAGUtils:
         llama_model= Model(
         model_id=llama,
         params=params,
-        credentials={url:self.creds.url,key:self.creds.key},
-        project_id=self.creds.project_id)
+        credentials={'url':self._creds.watsonx_url,'apikey':self._creds.watsonx_key},
+        project_id=self._creds.watsonx_project_id)
         
         #LangChain Ready
         return WatsonxLLM(model=llama_model)
@@ -211,13 +188,13 @@ class RAGUtils:
             different versions of the given user question to retrieve relevant documents from a vector 
             database. By generating multiple perspectives on the user question, your goal is to help
             the user overcome some of the limitations of the distance-based similarity search. 
-            Provide these alternative questions seperated by newlines. The default context of the topic is langchain.
+            Provide these alternative questions seperated by newlines.
             Original question: {question}""",
         )
 
         base_retriever = self._db.as_retriever()
         embeddings = self._db.embeddings
-        embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.85)
+        embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.75)
         compression_retriever = ContextualCompressionRetriever(base_compressor=embeddings_filter, base_retriever=base_retriever)
 
         #too slow
@@ -226,13 +203,13 @@ class RAGUtils:
 
         output_parser = LineListOutputParser()
         
-        retriever_llm_chain = LLMChain(llm=self.llm_llama_temp_0p1, prompt=QUERY_PROMPT, output_parser=output_parser)
+        retriever_llm_chain = LLMChain(llm=self._llm_llama_temp_0p1, prompt=QUERY_PROMPT, output_parser=output_parser)
         multi_retriever = MultiQueryRetriever(
             retriever=compression_retriever, llm_chain=retriever_llm_chain, parser_key="lines"
         )  # "lines" is the key (attribute name) of the parsed output
         return multi_retriever
     
-    def _get_stuff_chain():
+    def _get_stuff_chain(self):
             # This controls how each document will be formatted. Specifically,
         # it will be passed to the stuff chain - see that function for more details.
         document_prompt = PromptTemplate(
@@ -243,7 +220,7 @@ class RAGUtils:
         sum_prompt = PromptTemplate.from_template(
             "Summarize this content: {context}"
         )
-        sum_llm_chain = LLMChain(llm=self.llm_llama_temp_0p1, prompt=sum_prompt)
+        sum_llm_chain = LLMChain(llm=self._llm_llama_temp_0p1, prompt=sum_prompt)
         stuff_chain = StuffDocumentsChain(
             llm_chain=sum_llm_chain,
             document_prompt=document_prompt,

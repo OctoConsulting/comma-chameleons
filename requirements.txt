@@ -3,13 +3,16 @@
 #transformers
 langchain
 chromadb
-accelerate
+accelerate #?
 #xformers
-gradio
-ipykernel
-ipwidgets
+gradio #?
+ipykernel #?
+ipywidgets #?
 #openai
-tiktoken
-beautifulsoup4
+tiktoken 
+beautifulsoup4 #?
 ibm-watson-machine-learning>=1.0.321 #(for langchain and llama2) 
 sentence_transformers
+datasets
+#apache_beam
+#multiprocess==0.70.15
