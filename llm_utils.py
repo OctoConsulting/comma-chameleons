@@ -45,8 +45,8 @@ def create_vector_db(docs):
     #split docs into chunks
     from langchain.text_splitter import TokenTextSplitter #requires tiktoken
     from transformers import AutoTokenizer
-    
-    tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-large-en-v1.5")
+    encoder_model= "BAAI/bge-base-en"
+    tokenizer = AutoTokenizer.from_pretrained(encoder_model)
     text_splitter = TokenTextSplitter.from_huggingface_tokenizer(tokenizer,chunk_size=200, chunk_overlap=20)
     docs_split = text_splitter.transform_documents(docs)
     
@@ -66,7 +66,7 @@ def create_vector_db(docs):
     normalize_embeddings = True
     
     
-    model_name = "BAAI/bge-large-en-v1.5"
+    model_name = encoder_model
     model_kwargs = {'device': device}
     encode_kwargs = {'normalize_embeddings': normalize_embeddings}
     
@@ -78,8 +78,8 @@ def create_vector_db(docs):
     embedding_function= bge_hf
     
     # embed and load it into Chroma
-    db = Chroma.from_documents(docs_split, embedding_function)#,persist_directory="./chroma_db_wiki")
-    #db.persist()
+    db = Chroma.from_documents(docs_split, embedding_function,persist_directory="./chroma_db_wiki")
+    db.persist()
     return db
 
 # Output parser will split the LLM result into a list of queries
@@ -132,52 +132,56 @@ class RAGUtils:
     def __init__(self, db, credentials: Credentials = None):
         self._db = db
         self._creds = credentials
-        self._history = ChatMessageHistory()
+        #self._history = ChatMessageHistory()
         #Load Chain
         try:
             #Low Temp Model Low Output (Faster/Cheaper) Model for RAG 
-            self._llm_llama_temp_0p1 = self._get_llama(temp=0.2,max_new_tokens=300)
+            self._llm_llama_temp_low = self._get_llama(temp=0,max_new_tokens=200,top_k=1,top_p=0)
             #get a mid temp high output model for the QA
-            self._llm_llama_temp_0p5 = self._get_llama(temp=0.5,max_new_tokens=1000)
+            self._llm_llama_temp_high = self._get_llama(temp=0.5,max_new_tokens=1000,top_k=25,top_p=.5)
             #The RAG
             self._chain = self._load_chain()
         except Exception as e:
             raise SystemExit(f"Error loading chain: {e}")
 
-    def __call__(self,inp, chat_history):
+    def __call__(self,inp):#, chat_history):
         #Gradio Need to test WxA       
-        for human, ai in chat_history:
-            self._history.add_user_message(human)
-            self._history.add_ai_message(ai)
-        print(self._history.messages)
-        output = self._chain.run({'question':inp, 'chat_history':self._history.messages})
-        self._history.add_user_message(inp)
-        self._history.add_ai_message(output)
-        return "", self._history.messages
+        #for human, ai in chat_history:
+        #    self._history.add_user_message(human)
+        #    self._history.add_ai_message(ai)
+        #print(self._history.messages)
+        #output = self._chain.run({'question':inp, 'chat_history':self._history.messages})
+        output = self._chain.run(inp)
+        return output
+        #self._history.add_user_message(inp)
+        #self._history.add_ai_message(output)
+        #return "", self._history.messages
 
  
     
-    def _get_llama(self,temp, max_new_tokens):
+    def _get_llama(self,temp, max_new_tokens, top_k, top_p):
         # Found that GREEDY was better than SAMPLE to stay on task and get stop tokens
         # Temp was best tuning parameter but higher than .5 it was hallucinate 
         # Bigger output for RAG, smaller for final to be more direct for WxA
         params = {
             GenParams.MAX_NEW_TOKENS: max_new_tokens,
             GenParams.MIN_NEW_TOKENS: 1,
-            GenParams.DECODING_METHOD: DecodingMethods.GREEDY,
+            GenParams.DECODING_METHOD: DecodingMethods.SAMPLE,
             GenParams.TEMPERATURE: temp,
-            GenParams.TOP_K: 50,
-            GenParams.TOP_P: .95
+            GenParams.TOP_K: top_k,
+            GenParams.TOP_P: top_p,
+            #GenParams.REPETITION_PENALTY: 1
         }
+
       
         llama = ModelTypes.LLAMA_2_70B_CHAT #oh yeah
 
         llama_model= Model(
-        model_id=llama,
-        params=params,
-        credentials={'url':self._creds.watsonx_url,'apikey':self._creds.watsonx_key},
-        project_id=self._creds.watsonx_project_id)
-        
+            model_id=llama,
+            params=params,
+            credentials={'url':self._creds.watsonx_url,'apikey':self._creds.watsonx_key},
+            project_id=self._creds.watsonx_project_id)
+          
         #LangChain Ready
         return WatsonxLLM(model=llama_model)
     
@@ -188,13 +192,13 @@ class RAGUtils:
             different versions of the given user question to retrieve relevant documents from a vector 
             database. By generating multiple perspectives on the user question, your goal is to help
             the user overcome some of the limitations of the distance-based similarity search. 
-            Provide these alternative questions seperated by newlines.
+            Provide these alternative questions seperated by newlines. Only use the question provided.
             Original question: {question}""",
         )
 
         base_retriever = self._db.as_retriever()
         embeddings = self._db.embeddings
-        embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.75)
+        embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.8)
         compression_retriever = ContextualCompressionRetriever(base_compressor=embeddings_filter, base_retriever=base_retriever)
 
         #too slow
@@ -229,26 +233,28 @@ class RAGUtils:
 
         return stuff_chain
 
-    def _get_qa_chain(self):
+    #def _get_qa_chain(self):
         # This controls how the standalone question is generated.
         # Should take `chat_history` and `question` as input variables.
-        template = (
-            "Combine the chat history and follow up question into "
-            "a standalone question. Chat History: {chat_history}"
-            "Follow up question: {question}"
-        )
-        prompt = PromptTemplate.from_template(template)
-        
-        question_generator_chain = LLMChain(llm=self._llm_llama_temp_0p5, prompt=prompt)
-        return question_generator_chain
+    #    template = (
+    #        "Combine the chat history and follow up question into "
+    #        "a standalone question. Chat History: {chat_history}"
+    #        "Follow up question: {question}"
+    #    )
+    #    prompt = PromptTemplate.from_template(template)
+    #    
+    #    question_generator_chain = LLMChain(llm=self._llm_llama_temp_0p5, prompt=prompt)
+    #    return question_generator_chain
 
 
     def _load_chain(self):
     
-        chain = ConversationalRetrievalChain(
-            combine_docs_chain=self._get_stuff_chain(),
+      #  chain = ConversationalRetrievalChain(
+        chain = RetreiverQA(
+            #combine_docs_chain=self._get_stuff_chain(),
+            combine_documents_chain=self._get_stuff_chain(),
             retriever=self._get_retriever_chain(),
-            question_generator=self._get_qa_chain(),
+     #       question_generator=self._get_qa_chain(),
     )
         return chain
 
