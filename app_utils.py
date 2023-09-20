@@ -2,6 +2,7 @@
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
 import gradio as gr
+from guardrails import guardrails
 
 def read_file_from_path(file_path):
     with open(file_path, 'r') as f:
@@ -42,34 +43,11 @@ def display_message(button_text):
     elif button_text == 'Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis':
         return '**Press send to ask the ai more about this** Your wine, distilled spirit, or beer/malt beverage may require ...'
 
-# Make a call to LLM API that sends Gradio input and history as payload, update the history accordingly.
+# Send input to Nemo Guardrails RAG with actions pipeline
 def predict(inp, history):
-    
-
-    print("this is the input:" + inp)
-    print(history)
-    
-    # Authentication for IBM Cloud API
-    import requests
-    API_KEY = '5Oz7Ma1ZCctfI0I9FU1kbZC6YRWm9jRKddtL-8mJYREx'
-    token_response = requests.post('https://iam.cloud.ibm.com/identity/token', data={"apikey": API_KEY, "grant_type": 'urn:ibm:params:oauth:grant-type:apikey'})
-    mltoken = token_response.json()["access_token"]
-    
-    # Set up headers for the API request
-    header = {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + mltoken}
-    
-    # Prepare and send the API request for scoring (prediction)
-    payload_scoring = {"input_data": [{"values": [history + [inp]]}]}
-    response_scoring = requests.post('https://us-south.ml.cloud.ibm.com/ml/v4/deployments/ce451240-81cf-41ac-856d-a00153c75bbd/predictions?version=2021-05-01', 
-                       json=payload_scoring, 
-                       headers={'Authorization': 'Bearer ' + mltoken})
-    
-    # Parse and retrieve the response
-    response_json = response_scoring.json()
-    print(response_json)
-    
-    # Get the predicted output and update the history
-    output = response_json.get('predictions', [{}])[0].get('values', [[""]])[0][0]
+    output = guardrails(inp)
+        
+    # Update the history
     history.append((inp, output))
     return "", history
 
