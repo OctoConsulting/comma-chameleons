@@ -6,7 +6,7 @@ from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes, DecodingMethods
 from langchain.chains import (
-        StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+        StuffDocumentsChain, LLMChain, ConversationalRetrievalChain, RetrievalQA
     )
 from langchain.memory import ChatMessageHistory
 from langchain.schema import Document
@@ -15,12 +15,11 @@ from ibm_watson_machine_learning.metanames import GenTextParamsMetaNames as GenP
 from ibm_watson_machine_learning.foundation_models import Model
 from typing import List, Iterable
 from pydantic import BaseModel, Field
-import json
-import logging
+import json, logging, configparser, os
 
 logging.basicConfig()
 logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
-logging.getLogger("langchain.retrievers.document_compressors.embeddings_filter").setLevel(logging.INFO)
+#logging.getLogger("langchain.retrievers.document_compressors.embeddings_filter").setLevel(logging.INFO)
 
 #def web_scrap(url):
 #    loader = RecursiveUrlLoader(url=url, extractor=lambda x: Soup(x, "html.parser").text)
@@ -38,6 +37,26 @@ def load_data_from_huggingface(path,name=None,page_content_column='text', max_le
     else:
         return docs
 
+def load_vector_db(path):
+    from langchain.embeddings import HuggingFaceBgeEmbeddings #requires sentence-transformers
+    # embed and load it into Chroma
+    encoder_model= "BAAI/bge-large-en"
+    device ='cpu'
+    normalize_embeddings = True
+    model_name = encoder_model
+    model_kwargs = {'device': device}
+    encode_kwargs = {'normalize_embeddings': normalize_embeddings}
+    
+    bge_hf = HuggingFaceBgeEmbeddings(
+        model_name=model_name,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs
+    )
+    embedding_function= bge_hf
+
+    db = Chroma(embedding_function = embedding_function,persist_directory=path)
+    db.persist()
+    return db
 
 def create_vector_db(docs):
     #Assumes input in LangChain Doc Format
@@ -62,7 +81,7 @@ def create_vector_db(docs):
 
     #device = 'cuda' if is_cuda_available else 'cpu'
     #normalize_embeddings = is_cuda_available
-    device ='cuda'
+    device ='cpu'
     normalize_embeddings = True
     
     
@@ -144,7 +163,7 @@ class RAGUtils:
         except Exception as e:
             raise SystemExit(f"Error loading chain: {e}")
 
-    def __call__(self,inp):#, chat_history):
+    def __call__(self,inp,history):#, chat_history):
         #Gradio Need to test WxA       
         #for human, ai in chat_history:
         #    self._history.add_user_message(human)
@@ -152,7 +171,11 @@ class RAGUtils:
         #print(self._history.messages)
         #output = self._chain.run({'question':inp, 'chat_history':self._history.messages})
         output = self._chain.run(inp)
-        return output
+        print(output)
+        # Update the history
+        history.append((inp, output))
+        return "", history
+        #return output
         #self._history.add_user_message(inp)
         #self._history.add_ai_message(output)
         #return "", self._history.messages
@@ -207,7 +230,7 @@ class RAGUtils:
 
         output_parser = LineListOutputParser()
         
-        retriever_llm_chain = LLMChain(llm=self._llm_llama_temp_0p1, prompt=QUERY_PROMPT, output_parser=output_parser)
+        retriever_llm_chain = LLMChain(llm=self._llm_llama_temp_low, prompt=QUERY_PROMPT, output_parser=output_parser)
         multi_retriever = MultiQueryRetriever(
             retriever=compression_retriever, llm_chain=retriever_llm_chain, parser_key="lines"
         )  # "lines" is the key (attribute name) of the parsed output
@@ -224,7 +247,7 @@ class RAGUtils:
         sum_prompt = PromptTemplate.from_template(
             "Summarize this content: {context}"
         )
-        sum_llm_chain = LLMChain(llm=self._llm_llama_temp_0p1, prompt=sum_prompt)
+        sum_llm_chain = LLMChain(llm=self._llm_llama_temp_high, prompt=sum_prompt)
         stuff_chain = StuffDocumentsChain(
             llm_chain=sum_llm_chain,
             document_prompt=document_prompt,
@@ -250,7 +273,7 @@ class RAGUtils:
     def _load_chain(self):
     
       #  chain = ConversationalRetrievalChain(
-        chain = RetreiverQA(
+        chain = RetrievalQA(
             #combine_docs_chain=self._get_stuff_chain(),
             combine_documents_chain=self._get_stuff_chain(),
             retriever=self._get_retriever_chain(),

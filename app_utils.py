@@ -2,7 +2,7 @@
 # https://www.gradio.app/demos
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
 import gradio as gr
-from guardrails import guardrails
+
 
 def read_file_from_path(file_path):
     with open(file_path, 'r') as f:
@@ -44,12 +44,12 @@ def display_message(button_text):
         return '**Press send to ask the ai more about this** Your wine, distilled spirit, or beer/malt beverage may require ...'
 
 # Send input to Nemo Guardrails RAG with actions pipeline
-def predict(inp, history):
-    output = guardrails(inp)
+#def predict(inp, history):
+#    output = guardrails(inp)
         
     # Update the history
-    history.append((inp, output))
-    return "", history
+#    history.append((inp, output))
+#    return "", history
 
 # Custom css for the Gradio. See Gradio docs for how the classes and ids were implemented. 
 css = """
@@ -102,7 +102,7 @@ div > button.related-links-bottom {
 """
 
 # Gradio blocks style UI
-def initialize_ui():  # Initialize the Gradio UI
+def initialize_ui(predict):  # Initialize the Gradio UI
     """Initialize and launch the Gradio UI."""
     with gr.Blocks(css=css) as block:
         # Displaying header text
