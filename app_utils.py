@@ -126,7 +126,7 @@ def initialize_ui(predict):  # Initialize the Gradio UI
 
                 # Button to submit the query
                 with gr.Column(scale=0.09, min_width=0):
-                    submit = gr.Button(value="Generate", variant="secondary").style(full_width=False)
+                    submit = gr.Button(value="Click to Submit", variant="secondary").style(full_width=False)
 
                 # Buttons for example queries
                 with gr.Column(elem_id="examples-container"):
