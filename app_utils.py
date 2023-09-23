@@ -36,12 +36,12 @@ def display_text(message, chat_history):
 # their displayed message. 
 def display_message(button_text):
     # Create detailed messages for each type of action a user can take.
-    if button_text == 'Apply for and update the permit, registration, or notice.':
-        return '**Press send to ask the ai more about this** Permits Online makes it easy for you ...'
-    elif button_text == 'Apply for a Certificate of Label Approval/Exemption (COLA).':
-        return '**Press send to ask the ai more about this** COLAs Online makes it easy for you ...'
-    elif button_text == 'Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis':
-        return '**Press send to ask the ai more about this** Your wine, distilled spirit, or beer/malt beverage may require ...'
+    if button_text == 'Who is Alan Turing?':
+        return 'Who is Alan Turing?'
+    elif button_text == 'What is Alan Turing known for?':
+        return 'What is Alan Turing known for?'
+    elif button_text == 'Who is the person behind the Turing Test?':
+        return 'Who is the person behind the Turing Test?'
 
 # Send input to Nemo Guardrails RAG with actions pipeline
 #def predict(inp, history):
@@ -55,10 +55,9 @@ def display_message(button_text):
 css = """
 #warning {background-color: #FFCCCB} 
 .feedback textarea {font-size: 24px !important}
-#chat-prompt {box-shadow: 3px 3px #20808D, -1em 0 .4em lightgrey;}
-#chat-prompt-row {position: absolute; top: 169px;}
+#chat-prompt-row {position: absolute; top: 398px;}
 #header-subtext {display: flex;}
-#related-header-subtext h3 center {display: flex; color: #20808D;}
+#related-header-subtext h3 center {display: flex; color: #F7931E;}
 #upload-btn {width: max-content; font-size: 14px; border: none; background: none; box-shadow: none; z-index: 2;}
 #tab-one-content {color: black !important; border: none !important;}
 #tab-two-content {color: black;}
@@ -106,7 +105,7 @@ def initialize_ui(predict):  # Initialize the Gradio UI
     """Initialize and launch the Gradio UI."""
     with gr.Blocks(css=css) as block:
         # Displaying header text
-        gr.Markdown("<h3><center>TTB.gov watsonx Demo</center></h3>", elem_id="header-subtext")
+        gr.Markdown("<h3><center>watsonx RAG Demo</center></h3>", elem_id="header-subtext")
 
         with gr.Row():
 
@@ -116,7 +115,7 @@ def initialize_ui(predict):  # Initialize the Gradio UI
                     message = gr.Textbox(
                         label="Input",
                         placeholder="Ask anything...",
-                        lines=8,
+                        lines=20,
                         elem_id="chat-prompt"
                     ).style(container=False)
 
@@ -127,7 +126,7 @@ def initialize_ui(predict):  # Initialize the Gradio UI
 
                 # Button to submit the query
                 with gr.Column(scale=0.09, min_width=0):
-                    submit = gr.Button(value="➦", variant="secondary").style(full_width=False)
+                    submit = gr.Button(value="Generate", variant="secondary").style(full_width=False)
 
                 # Buttons for example queries
                 with gr.Column(elem_id="examples-container"):
@@ -135,29 +134,30 @@ def initialize_ui(predict):  # Initialize the Gradio UI
 
                     with gr.Row():
                         with gr.Column(scale=0.2, min_width=0):
-                            example1_button = gr.Button("Apply for and update the permit, registration, or notice.", elem_classes="tab-button")
+                            example1_button = gr.Button("Who is Alan Turing?", elem_classes="tab-button")
                         with gr.Column(scale=0.2, min_width=0):
-                            example2_button = gr.Button("Apply for a Certificate of Label Approval/Exemption (COLA).", elem_classes="tab-button")
+                            example2_button = gr.Button("What is Alan Turing known for?", elem_classes="tab-button")
                         with gr.Column(scale=0.2, min_width=0):
-                            example3_button = gr.Button("Your wine, distilled spirit, or beer/malt beverage may require formula approval or laboratory sample analysis", elem_classes="tab-button")
+                            example3_button = gr.Button("Who is the person behind the Turing Test?", elem_classes="tab-button")
 
             # Chatbot display section
             with gr.Column(elem_id="chatbot-container"):
-                chatbot = gr.Chatbot(height=700, label="watsonx", show_copy_button=True)
+                chatbot = gr.Chatbot(height=500, label="watsonx", show_copy_button=True)
 
                 # Additional buttons for quick links or popular searches
-                with gr.Column(elem_id="related-links-container"):
-                    gr.Markdown("<h3><center>🌩 Quick Search Popular</center></h3>", elem_id="related-header-subtext")
-                    tab1_button = gr.Button("How to Amend an Approved Permit, Registration, or Notice using Permits Online", elem_classes="related-links")
-                    tab2_button = gr.Button("What to Gather Before you Apply", elem_classes="related-links-bottom")
+                # with gr.Column(elem_id="related-links-container"):
+                #     gr.Markdown("<h3><center>🌩 Quick Search Popular</center></h3>", elem_id="related-header-subtext")
+                #     tab1_button = gr.Button("How to Amend an Approved Permit, Registration, or Notice using Permits Online", elem_classes="related-links")
+                #     tab2_button = gr.Button("What to Gather Before you Apply", elem_classes="related-links-bottom")
 
         # Binding actions to buttons
-        tab1_button.click(display_text, inputs=[tab1_button, chatbot], outputs=[chatbot, chatbot])
-        tab2_button.click(display_text, inputs=[tab2_button, chatbot], outputs=[chatbot, chatbot])
+        # tab1_button.click(display_text, inputs=[tab1_button, chatbot], outputs=[chatbot, chatbot])
+        # tab2_button.click(display_text, inputs=[tab2_button, chatbot], outputs=[chatbot, chatbot])
         example1_button.click(display_message, inputs=[example1_button], outputs=[message])
         example2_button.click(display_message, inputs=[example2_button], outputs=[message])
         example3_button.click(display_message, inputs=[example3_button], outputs=[message])
         submit.click(predict, inputs=[message, chatbot], outputs=[message, chatbot])
+        # message.submit(predict, inputs=[message, chatbot], outputs=[message, chatbot])
 
         # Upload button event handling. .upload is an abstraction of an event listener when the user clicks the upload_btn.
         upload_btn.upload(process_uploaded_file, inputs=upload_btn, outputs=message)
