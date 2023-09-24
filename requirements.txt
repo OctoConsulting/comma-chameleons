@@ -1,20 +1,10 @@
-#streamlit
-#torch
-#transformers
 langchain
 chromadb
-#accelerate
-#xformers
 gradio #?
 ipykernel #?
 ipywidgets #?
-#openai
 tiktoken 
 beautifulsoup4 #?
 ibm-watson-machine-learning>=1.0.321 #(for langchain and llama2) 
 sentence_transformers
-nemoguardrails
-#datasets
-#apache_beam
-#multiprocess==0.70.15
 /chroma_db_wiki_base/b4c64242-a620-4cc5-bc19-7c0b828df60d/

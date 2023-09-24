@@ -3,7 +3,7 @@
 # https://python.langchain.com/docs/integrations/tools/gradio_tools
 import gradio as gr
 
-
+# Read the contents of a file
 def read_file_from_path(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
@@ -14,22 +14,6 @@ def process_uploaded_file(file):
     file_path = file.name        
     content = read_file_from_path(file_path)
     return content
-
-# Update the chat history and display a message based on the provided input.
-# This method is example of how to play with how the chat history is 
-# displayed on the client side. 
-def display_text(message, chat_history):
-    chat_history.clear()  # Clear the existing chat history
-    
-    # Provide content based on the specific message received.
-    if message == 'How to Amend an Approved Permit, Registration, or Notice using Permits Online':
-        content = '<span id="tab-one-content">Select the application that you would like to amend: ...</span>'
-    else:
-        content = '<span id="tab-two-content">What permit are you applying for?</span>'
-    
-    bot_message = content
-    chat_history.append((None, bot_message))
-    return "", chat_history
 
 # Return information based on the type of permit or registration requested.
 # This method is example of how to configure Gradio 'examples' whos output differs from
@@ -42,14 +26,6 @@ def display_message(button_text):
         return 'What is Alan Turing known for?'
     elif button_text == 'Who is the person behind the Turing Test?':
         return 'Who is the person behind the Turing Test?'
-
-# Send input to Nemo Guardrails RAG with actions pipeline
-#def predict(inp, history):
-#    output = guardrails(inp)
-        
-    # Update the history
-#    history.append((inp, output))
-#    return "", history
 
 # Custom css for the Gradio. See Gradio docs for how the classes and ids were implemented. 
 css = """
@@ -144,44 +120,12 @@ def initialize_ui(predict):  # Initialize the Gradio UI
             with gr.Column(elem_id="chatbot-container"):
                 chatbot = gr.Chatbot(height=500, label="watsonx", show_copy_button=True)
 
-                # Additional buttons for quick links or popular searches
-                # with gr.Column(elem_id="related-links-container"):
-                #     gr.Markdown("<h3><center>🌩 Quick Search Popular</center></h3>", elem_id="related-header-subtext")
-                #     tab1_button = gr.Button("How to Amend an Approved Permit, Registration, or Notice using Permits Online", elem_classes="related-links")
-                #     tab2_button = gr.Button("What to Gather Before you Apply", elem_classes="related-links-bottom")
-
-        # Binding actions to buttons
-        # tab1_button.click(display_text, inputs=[tab1_button, chatbot], outputs=[chatbot, chatbot])
-        # tab2_button.click(display_text, inputs=[tab2_button, chatbot], outputs=[chatbot, chatbot])
         example1_button.click(display_message, inputs=[example1_button], outputs=[message])
         example2_button.click(display_message, inputs=[example2_button], outputs=[message])
         example3_button.click(display_message, inputs=[example3_button], outputs=[message])
         submit.click(predict, inputs=[message, chatbot], outputs=[message, chatbot])
-        # message.submit(predict, inputs=[message, chatbot], outputs=[message, chatbot])
 
         # Upload button event handling. .upload is an abstraction of an event listener when the user clicks the upload_btn.
         upload_btn.upload(process_uploaded_file, inputs=upload_btn, outputs=message)
         
-        # Examples of basic Gradio accordions and chatbot 'examples'
-        # with gr.Row():
-        #     # file_output = gr.File()
-
-        #     with gr.Accordion("Available Files", open=False):
-        #         file_display = gr.Textbox(label="File Contents", lines=10, readonly=True) 
-
-        #     gr.Examples(
-        #         examples=[
-        #             "Hi! How's it going?",
-        #             "What should I do tonight?",
-        #             "Whats 2 + 2?",
-        #         ],
-        #         inputs=message,
-        #     )
-
-        # Examples of Gradio HTML components
-        # gr.HTML(
-        #     "<center>Powered by <a href='https://www.ibm.com/docs/en/watsonx-as-a-service?topic=overview-watsonx'>watsonx 🦜️🔗</a></center>"
-        # 
-
     return block  # Return the UI block
-    #block.launch()#debug=True) # Return the UI block when it is outside of a method
