@@ -23,7 +23,7 @@ import json, logging, configparser, os
 #    docs = loader.load
 #    return docs
 
-#wierd dependecy on dill
+#weird dependecy on dill
 #def load_data_from_huggingface(path,name=None,page_content_column='text', max_len=20):
 #    #LangChain Wrapper does not support splits and assumes text context https://github.com/langchain-ai/langchain/issues/10674
 #    from langchain.document_loaders import HuggingFaceDatasetLoader
