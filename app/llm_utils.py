@@ -173,8 +173,8 @@ class RAGUtils:
         # Update the history
         history.append((inp, output))
         return "", history
+        # print(output)
  
-    
     def _get_llama(self,temp, max_new_tokens, top_k, top_p):
         # Base on LLAMA tuning which seemed to greater variable than GPT or other WatsonX Foundation Models:
         # Found that SAMPLE was better than GREEDY to stay on task and get stop tokens BUT Needed a lot of fine tuning
