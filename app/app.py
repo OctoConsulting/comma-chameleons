@@ -1,5 +1,5 @@
 # Local Imports
-from llm_utils import load_data_from_huggingface, load_vector_db, RAGUtils, Credentials
+from llm_utils import load_vector_db, RAGUtils, Credentials
 from app_utils import initialize_ui
 
 # Initialize the RAG pipeline 
@@ -14,7 +14,7 @@ def launch_gradio(predict):
 # Initialize the RAG pipeline and also the Launch the Gradio UI
 def main():
     ###### Build Vector DB ########
-    db = load_vector_db("./chroma_db_wiki_base")
+    db = load_vector_db("./chroma_db_small")
 
     ###### Langchain ########
     creds = Credentials('key.ini')

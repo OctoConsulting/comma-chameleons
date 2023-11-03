@@ -14,6 +14,7 @@ from typing import List, Iterable
 from pydantic import BaseModel, Field
 import json, logging, configparser, os
 
+
 #logging.basicConfig()
 #logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
 #logging.getLogger("langchain.retrievers.document_compressors.embeddings_filter").setLevel(logging.INFO)
@@ -50,8 +51,7 @@ def load_vector_db(path):
         encode_kwargs=encode_kwargs
     )
     embedding_function= bge_hf
-
-    db = Chroma(embedding_function = embedding_function,persist_directory=path)
+    db = Chroma(persist_directory=path, embedding_function = embedding_function)
     db.persist()
     return db
 
@@ -152,10 +152,10 @@ class RAGUtils:
         #Load Chain
         try:
             #Low Temp Model Low Output (Faster/Cheaper) Model for RAG 
-            self._llm_llama_temp_low = self._get_llama(temp=0,max_new_tokens=200,top_k=1,top_p=0)
+            self._llm_llama_temp_low = self._get_llama(temp=0,max_new_tokens=200,top_k=1,top_p=0, repetition_penality = 1)
             #For Test self._llm_llama_temp_low = self._get_llama(temp=0.2,max_new_tokens=200,top_k=10,top_p=0.2)
             #get a mid temp high output model for the QA
-            self._llm_llama_temp_high = self._get_llama(temp=0.5,max_new_tokens=1000,top_k=25,top_p=.5)
+            self._llm_llama_temp_high = self._get_llama(temp=0.2,max_new_tokens=150,top_k=25,top_p=.5, repetition_penality = 1)
             #The RAG
             self._chain = self._load_chain()
         except Exception as e:
@@ -164,6 +164,7 @@ class RAGUtils:
     #For use with front end can call chain below for testing without app
     def __call__(self,inp,history):#, chat_history):
         output_dict = self._chain(inp)
+        #print(output_dict)
         output_str = f"""Answer: {output_dict['result']}"""
         for doc in output_dict['source_documents']:
           page_content_str = f"-------Page Content------\n\n{doc.page_content}"
@@ -175,9 +176,9 @@ class RAGUtils:
         return "", history
         # print(output)
  
-    def _get_llama(self,temp, max_new_tokens, top_k, top_p):
+    def _get_llama(self,temp, max_new_tokens, top_k, top_p, repetition_penality):
         # Base on LLAMA tuning which seemed to greater variable than GPT or other WatsonX Foundation Models:
-        # Found that SAMPLE was better than GREEDY to stay on task and get stop tokens BUT Needed a lot of fine tuning
+        # Found  that SAMPLE was better than GREEDY to stay on task and get stop tokens BUT Needed a lot of fine tuning
         # Low Temp LLM in init should be GREEDY like but SAMPLE with Low TEMP Parameters worked better
         # Tuning Temp would create BIG change but higher than .5 it was hallucinate (become TOO creative) which for a different application might be goood
         # Anthing hight than temp = 0 in long run testing it was noticed the intructions would sometimes be ingored
@@ -190,7 +191,8 @@ class RAGUtils:
             GenParams.TEMPERATURE: temp,
             GenParams.TOP_K: top_k,
             GenParams.TOP_P: top_p,
-            #GenParams.REPETITION_PENALTY: 1
+            #GenParams.RANDOM_SEED: 1234,
+            GenParams.REPETITION_PENALTY: repetition_penality
         }
 
       
@@ -239,11 +241,11 @@ class RAGUtils:
         backticks to answer the question delimited by double backticks.
         Use as much information as you can to create a dense summary. 
         Limit your answer to 3-5 sentences.
-        Do not make up questions.If you don't know the answer, 
-        just say that you don't know, don't try to make up an answer.
-        ``{context}``
+        Do not make up questions. If no context is provided, 
+        just say No context found.
+        ```{context}```
 
-        ```{question}```
+        ``{question}``
 
         Helpful Answer:
 

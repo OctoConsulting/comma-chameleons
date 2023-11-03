@@ -1,0 +1,8 @@
+/env
+/workspace
+.DS_Store
+key*
+/__pycache__
+key.ini
+*.pickle
+.vscode/settings.json

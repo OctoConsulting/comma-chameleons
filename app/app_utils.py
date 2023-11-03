@@ -20,12 +20,12 @@ def process_uploaded_file(file):
 # their displayed message. 
 def display_message(button_text):
     # Create detailed messages for each type of action a user can take.
-    if button_text == 'Who is Alan Turing?':
-        return 'Who is Alan Turing?'
-    elif button_text == 'What is Alan Turing known for?':
-        return 'What is Alan Turing known for?'
-    elif button_text == 'Who is the person behind the Turing Test?':
-        return 'Who is the person behind the Turing Test?'
+    if button_text == 'Do emergency ultrasound fellowship programs impact emergency medicine residents\' ultrasound education?':
+        return 'Do emergency ultrasound fellowship programs impact emergency medicine residents\' ultrasound education?'
+    elif button_text == 'Prompting Primary Care Providers about Increased Patient Risk As a Result of Family History: Does It Work?':
+        return 'Prompting Primary Care Providers about Increased Patient Risk As a Result of Family History: Does It Work?'
+    elif button_text == 'Do mitochondria play a role in remodelling lace plant leaves during programmed cell death?':
+        return 'Do mitochondria play a role in remodelling lace plant leaves during programmed cell death?'
 
 # Custom css for the Gradio. See Gradio docs for how the classes and ids were implemented. 
 css = """
@@ -92,17 +92,18 @@ def initialize_ui(predict):  # Initialize the Gradio UI
                         label="Input",
                         placeholder="Ask anything...",
                         lines=20,
-                        elem_id="chat-prompt"
-                    ).style(container=False)
+                        elem_id="chat-prompt",
+                        container=False
+                    )#.style(container=False)
 
                     # Button to upload a file
-                    with gr.Row(elem_id="chat-prompt-row"):
-                        with gr.Column(scale=0.09, min_width=0):
-                            upload_btn = gr.UploadButton("📁 File", file_types=["", ".", ".csv", ".xls", ".xlsx", "text"], file_count="single", elem_id="upload-btn")
+                    #with gr.Row(elem_id="chat-prompt-row"):
+                    #    with gr.Column(scale=0.09, min_width=0):
+                    #        upload_btn = gr.UploadButton("📁 File", file_types=["", ".", ".csv", ".xls", ".xlsx", "text"], file_count="single", elem_id="upload-btn")
 
                 # Button to submit the query
                 with gr.Column(scale=0.09, min_width=0):
-                    submit = gr.Button(value="Click to Submit", variant="secondary").style(full_width=False)
+                    submit = gr.Button(value="Click to Submit", variant="secondary")#.style(full_width=False)
 
                 # Buttons for example queries
                 with gr.Column(elem_id="examples-container"):
@@ -110,15 +111,15 @@ def initialize_ui(predict):  # Initialize the Gradio UI
 
                     with gr.Row():
                         with gr.Column(scale=0.2, min_width=0):
-                            example1_button = gr.Button("Who is Alan Turing?", elem_classes="tab-button")
+                            example1_button = gr.Button("Do emergency ultrasound fellowship programs impact emergency medicine residents' ultrasound education?", elem_classes="tab-button")
                         with gr.Column(scale=0.2, min_width=0):
-                            example2_button = gr.Button("What is Alan Turing known for?", elem_classes="tab-button")
+                            example2_button = gr.Button("Prompting Primary Care Providers about Increased Patient Risk As a Result of Family History: Does It Work?", elem_classes="tab-button")
                         with gr.Column(scale=0.2, min_width=0):
-                            example3_button = gr.Button("Who is the person behind the Turing Test?", elem_classes="tab-button")
+                            example3_button = gr.Button("Do mitochondria play a role in remodelling lace plant leaves during programmed cell death?", elem_classes="tab-button")
 
             # Chatbot display section
             with gr.Column(elem_id="chatbot-container"):
-                chatbot = gr.Chatbot(height=500, label="watsonx", show_copy_button=True)
+                chatbot = gr.Chatbot(height=1000, label="watsonx")
 
         example1_button.click(display_message, inputs=[example1_button], outputs=[message])
         example2_button.click(display_message, inputs=[example2_button], outputs=[message])
@@ -126,6 +127,6 @@ def initialize_ui(predict):  # Initialize the Gradio UI
         submit.click(predict, inputs=[message, chatbot], outputs=[message, chatbot])
 
         # Upload button event handling. .upload is an abstraction of an event listener when the user clicks the upload_btn.
-        upload_btn.upload(process_uploaded_file, inputs=upload_btn, outputs=message)
+        #upload_btn.upload(process_uploaded_file, inputs=upload_btn, outputs=message)
         
     return block  # Return the UI block
