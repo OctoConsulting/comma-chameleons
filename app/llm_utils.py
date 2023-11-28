@@ -13,6 +13,7 @@ from ibm_watson_machine_learning.foundation_models import Model
 from typing import List, Iterable
 from pydantic import BaseModel, Field
 import json, logging, configparser, os
+from langchain.text_splitter import TokenTextSplitter, RecursiveCharacterTextSplitter
 
 
 #logging.basicConfig()
@@ -56,18 +57,23 @@ def load_vector_db(path):
     return db
 
 def create_vector_db(docs):
+
+    from langchain.document_loaders import PyPDFLoader
+
+    loader = PyPDFLoader(docs)
     #Assumes input in LangChain Doc Format
     #[Document(page_content='...', metadata={'source': '...'})]
     #split docs into chunks
     from langchain.text_splitter import TokenTextSplitter #requires tiktoken
     from transformers import AutoTokenizer
-    encoder_model= "BAAI/bge-base-en"
+    encoder_model= 'intfloat/e5-large-v2'#"BAAI/bge-base-en"
     tokenizer = AutoTokenizer.from_pretrained(encoder_model)
-    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(tokenizer,chunk_size=3000, chunk_overlap=0,separators = ["\n\n", "\n"], keep_separator= False)
-    docs_split = text_splitter.transform_documents(docs)
+    text_splitter = RecursiveCharacterTextSplitter.from_huggingface_tokenizer(tokenizer,chunk_size=100, chunk_overlap=0,separators = ["\n\n", "\n"], keep_separator= False)
+    docs_split = loader.load_and_split(text_splitter=text_splitter)
+    #docs_split = text_splitter.transform_documents(documents)
     
     ###Get Encodder Model
-    from langchain.embeddings import HuggingFaceBgeEmbeddings #requires sentence-transformers
+    from langchain.embeddings import HuggingFaceEmbeddings #requires sentence-transformers
     
     #This was not working in Wx Notebook
     #try:
@@ -86,12 +92,12 @@ def create_vector_db(docs):
     model_kwargs = {'device': device}
     encode_kwargs = {'normalize_embeddings': normalize_embeddings}
     
-    bge_hf = HuggingFaceBgeEmbeddings(
+    hf = HuggingFaceEmbeddings(
         model_name=model_name,
         model_kwargs=model_kwargs,
         encode_kwargs=encode_kwargs
     )
-    embedding_function= bge_hf
+    embedding_function= hf
     
     # embed and load it into Chroma
     db = Chroma.from_documents(docs_split, embedding_function,persist_directory="./chroma_db")
